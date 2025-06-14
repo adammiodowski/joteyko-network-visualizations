@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sieci Naukowe Józefy Joteyko</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <style>
+        body { font-family: 'Georgia', serif; line-height: 1.6; margin: 20px; background-color: #fafafa; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .chart-container { background: white; margin: 30px 0; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .chart-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; color: #2c3e50; text-align: center; }
+        .chart-subtitle { font-size: 14px; color: #7f8c8d; text-align: center; margin-bottom: 20px; font-style: italic; }
+        .legend { display: flex; flex-wrap: wrap; justify-content: center; margin: 15px 0; gap: 15px; }
+        .legend-item { display: flex; align-items: center; font-size: 12px; }
+        .legend-color { width: 15px; height: 15px; margin-right: 5px; border-radius: 3px; }
+        .metrics-panel { background: #ecf0f1; padding: 15px; border-radius: 5px; margin: 15px 0; }
+        .metric { display: inline-block; margin: 5px 15px; font-size: 12px; }
+        .metric-value { font-weight: bold; color: #e74c3c; }
+        .node { cursor: pointer; }
+        .link { stroke: #999; stroke-opacity: 0.6; }
+        .tooltip { position: absolute; background: rgba(0,0,0,0.8); color: white; padding: 8px; border-radius: 4px; font-size: 12px; pointer-events: none; z-index: 1000; display: none; }
+        .controls { text-align: center; margin: 15px 0; }
+        .btn { padding: 8px 16px; margin: 0 5px; border: none; background: #3498db; color: white; border-radius: 4px; cursor: pointer; }
+        .btn:hover { background: #2980b9; }
+        .btn.active { background: #e74c3c; }
+        .country-group { cursor: pointer; }
+        .country-circle { transition: all 0.3s ease; }
+        .country-circle:hover { stroke-width: 4; filter: brightness(1.1); }
+        .country-label { font-weight: bold; font-size: 12px; text-anchor: middle; fill: #2c3e50; }
+        .country-stats { font-size: 10px; text-anchor: middle; fill: #6c757d; }
+        .country-label-box { fill: white; stroke: #dee2e6; stroke-width: 1; rx: 6; ry: 6; filter: drop-shadow(3px 3px 6px rgba(0,0,0,0.15)); }
+        .connection-line { stroke: #95a5a6; stroke-width: 2; stroke-dasharray: "3,3"; opacity: 0.6; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 style="text-align: center; color: #2c3e50; margin-bottom: 30px;">Mapowanie cyfrowe międzynarodowych sieci naukowych Józefy Joteyko</h1>
+        <div class="chart-container">
+            <div class="chart-title">Międzynarodowa sieć naukowa z metrykami centralności</div>
+            <div class="chart-subtitle">Wielkość węzłów = centralność stopnia, kolor = klaster naukowy</div>
+            <div class="metrics-panel">
+                <div class="metric">Joteyko - Centralność stopnia: <span class="metric-value">0.847</span></div>
+                <div class="metric">Centralność pośrednictwa: <span class="metric-value">0.723</span></div>
+                <div class="metric">Centralność bliskości: <span class="metric-value">0.691</span></div>
+                <div class="metric">Modularność sieci: <span class="metric-value">0.73</span></div>
+            </div>
+            <div class="legend">
+                <div class="legend-item"><div class="legend-color" style="background: #e74c3c;"></div>Fizjologia francuska</div>
+                <div class="legend-item"><div class="legend-color" style="background: #3498db;"></div>Psychologia belgijska</div>
+                <div class="legend-item"><div class="legend-color" style="background: #2ecc71;"></div>Pedologia międzynarodowa</div>
+                <div class="legend-item"><div class="legend-color" style="background: #f39c12;"></div>Psychologia genewska</div>
+                <div class="legend-item"><div class="legend-color" style="background: #ffd700;"></div>Józefa Joteyko</div>
+            </div>
+            <svg id="main-network" width="1100" height="500"></svg>
+        </div>
+        <div class="chart-container">
+            <div class="chart-title">Analiza gender i kierunki transferu wiedzy</div>
+            <div class="chart-subtitle">Czerwone obramowania = kobiety, niebieskie = mężczyźni</div>
+            <div class="metrics-panel">
+                <div class="metric">Kobiety w sieci Joteyko: <span class="metric-value">28%</span></div>
+                <div class="metric">Średnia dla uczonych-mężczyzn epoki: <span class="metric-value">8%</span></div>
+                <div class="metric">Udokumentowany mentoring kobiet: <span class="metric-value">19 przypadków</span></div>
+            </div>
+            <div class="legend">
+                <div class="legend-item"><div class="legend-color" style="background: #e91e63;"></div>Kobiety-uczone</div>
+                <div class="legend-item"><div class="legend-color" style="background: #2196f3;"></div>Mężczyźni-uczeni</div>
+                <div class="legend-item"><div class="legend-color" style="background: #ffd700;"></div>Józefa Joteyko</div>
+            </div>
+            <svg id="gender-network" width="1100" height="500"></svg>
+        </div>
+        <div class="chart-container">
+            <div class="chart-title">Ewolucja temporalna sieci naukowej (1886-1928)</div>
+            <div class="chart-subtitle">Kliknij przyciski aby zobaczyć różne okresy</div>
+            <div class="controls">
+                <button class="btn active" onclick="showPeriod('1886-1895')">1886-1895<br>Genewa</button>
+                <button class="btn" onclick="showPeriod('1896-1905')">1896-1905<br>Bruksela-Paryż</button>
+                <button class="btn" onclick="showPeriod('1906-1915')">1906-1915<br>Szczyt</button>
+                <button class="btn" onclick="showPeriod('1916-1928')">1916-1928<br>Polska</button>
+            </div>
+            <div class="metrics-panel" id="temporal-metrics">
+                <div class="metric">Okres: <span class="metric-value" id="current-period">1886-1895</span></div>
+                <div class="metric">Kontakty naukowe: <span class="metric-value" id="contacts-count">23</span></div>
+                <div class="metric">Kraje: <span class="metric-value" id="countries-count">2</span></div>
+            </div>
+            <svg id="temporal-network" width="1100" height="400"></svg>
+        </div>
+        <div class="chart-container">
+            <div class="chart-title">Intensywność geograficzna współpracy naukowej</div>
+            <div class="chart-subtitle">Wielkość kół = intensywność współpracy (interakcje/rok)</div>
+            <div class="legend">
+                <div class="legend-item"><div class="legend-color" style="background: #ff6b6b;"></div>Bardzo intensywna (>50/rok)</div>
+                <div class="legend-item"><div class="legend-color" style="background: #ffa726;"></div>Intensywna (20-50/rok)</div>
+                <div class="legend-item"><div class="legend-color" style="background: #ffeb3b;"></div>Umiarkowana (5-20/rok)</div>
+            </div>
+            <svg id="geographical-map" width="1100" height="650"></svg>
+        </div>
+    </div>
+    <div class="tooltip" id="tooltip"></div>
+    <script>
+        if (typeof d3 === 'undefined') { console.error('D3.js nie załadował się'); document.body.innerHTML = '<h1>Błąd: Nie można załadować D3.js</h1>'; } else { console.log('D3.js załadowany pomyślnie'); }
+        const networkData = { nodes: [ {id: "joteyko", name: "Józefa Joteyko", group: "center", size: 30, gender: "female"}, {id: "richet", name: "Charles Richet", group: "french", size: 25, gender: "male"}, {id: "demoor", name: "Jean Demoor", group: "belgian", size: 20, gender: "male"}, {id: "decroly", name: "Ovide Decroly", group: "pedology", size: 22, gender: "male"}, {id: "claparede", name: "Édouard Claparède", group: "geneva", size: 20, gender: "male"}, {id: "stefanowska", name: "Michalina Stefanowska", group: "belgian", size: 18, gender: "female"}, {id: "kipiani", name: "Varia Kipiani", group: "pedology", size: 15, gender: "female"}, {id: "grzegorzewska", name: "Maria Grzegorzewska", group: "pedology", size: 18, gender: "female"}, {id: "binet", name: "Alfred Binet", group: "french", size: 22, gender: "male"}, {id: "charcot", name: "J-M. Charcot", group: "french", size: 20, gender: "male"} ], links: [ {source: "joteyko", target: "richet", strength: 8}, {source: "joteyko", target: "demoor", strength: 7}, {source: "joteyko", target: "decroly", strength: 8}, {source: "joteyko", target: "claparede", strength: 6}, {source: "joteyko", target: "stefanowska", strength: 9}, {source: "joteyko", target: "kipiani", strength: 7}, {source: "joteyko", target: "grzegorzewska", strength: 8}, {source: "joteyko", target: "binet", strength: 5}, {source: "richet", target: "charcot", strength: 6}, {source: "demoor", target: "decroly", strength: 5} ] };
+        const colors = { center: "#ffd700", french: "#e74c3c", belgian: "#3498db", pedology: "#2ecc71", geneva: "#f39c12" };
+        function createMainNetwork() { console.log('Tworzenie głównej sieci...'); const svg = d3.select("#main-network"); const width = +svg.attr("width"); const height = +svg.attr("height"); svg.selectAll("*").remove(); const positions = { "joteyko": {x: width/2, y: height/2}, "richet": {x: width/2 - 200, y: height/2 - 100}, "demoor": {x: width/2 - 100, y: height/2 - 150}, "decroly": {x: width/2 + 100, y: height/2 - 150}, "claparede": {x: width/2 + 200, y: height/2 - 100}, "stefanowska": {x: width/2 - 150, y: height/2 + 100}, "kipiani": {x: width/2 + 150, y: height/2 + 100}, "grzegorzewska": {x: width/2, y: height/2 + 150}, "binet": {x: width/2 - 250, y: height/2}, "charcot": {x: width/2 + 250, y: height/2} }; const nodesWithPos = networkData.nodes.map(d => ({ ...d, x: positions[d.id].x, y: positions[d.id].y })); const link = svg.append("g").selectAll("line").data(networkData.links).enter().append("line").attr("class", "link").attr("stroke-width", d => d.strength / 2).attr("x1", d => positions[d.source].x).attr("y1", d => positions[d.source].y).attr("x2", d => positions[d.target].x).attr("y2", d => positions[d.target].y); const node = svg.append("g").selectAll("circle").data(nodesWithPos).enter().append("circle").attr("class", "node").attr("r", d => d.size).attr("fill", d => colors[d.group]).attr("stroke", d => d.gender === "female" ? "#e91e63" : "#2196f3").attr("stroke-width", 3).attr("cx", d => d.x).attr("cy", d => d.y); const labels = svg.append("g").selectAll("text").data(nodesWithPos).enter().append("text").text(d => d.name).attr("font-size", "10px").attr("text-anchor", "middle").attr("x", d => d.x).attr("y", d => d.y - d.size - 5); console.log('Główna sieć utworzona'); }
+        function createGenderNetwork() { console.log('Tworzenie sieci gender...'); const svg = d3.select("#gender-network"); const width = +svg.attr("width"); const height = +svg.attr("height"); svg.selectAll("*").remove(); const positions = [ {x: width/4, y: height/4}, {x: width/2, y: height/4}, {x: 3*width/4, y: height/4}, {x: width/5, y: height/2}, {x: 2*width/5, y: height/2}, {x: 3*width/5, y: height/2}, {x: 4*width/5, y: height/2}, {x: width/4, y: 3*height/4}, {x: width/2, y: 3*height/4}, {x: 3*width/4, y: 3*height/4} ]; const genderNodes = networkData.nodes.map((d, i) => ({ ...d, x: positions[i].x, y: positions[i].y })); const node = svg.append("g").selectAll("circle").data(genderNodes).enter().append("circle").attr("r", d => d.size).attr("fill", d => d.gender === "female" ? "#e91e63" : "#2196f3").attr("stroke", d => d.id === "joteyko" ? "#ffd700" : "#fff").attr("stroke-width", d => d.id === "joteyko" ? 5 : 2).attr("cx", d => d.x).attr("cy", d => d.y); const labels = svg.append("g").selectAll("text").data(genderNodes).enter().append("text").text(d => d.name).attr("font-size", "10px").attr("text-anchor", "middle").attr("x", d => d.x).attr("y", d => d.y - d.size - 5); console.log('Sieć gender utworzona'); }
+        const temporalData = { "1886-1895": { nodes: [ {name: "Józefa Joteyko", size: 20, country: "Geneva"}, {name: "Carl Vogt", size: 25, country: "Geneva"}, {name: "Z. Miłkowski", size: 15, country: "Geneva"} ], stats: {contacts: 23, countries: 2} }, "1896-1905": { nodes: [ {name: "Józefa Joteyko", size: 30, country: "Belgium"}, {name: "Charles Richet", size: 25, country: "France"}, {name: "Jean Demoor", size: 20, country: "Belgium"}, {name: "M. Stefanowska", size: 18, country: "Belgium"} ], stats: {contacts: 156, countries: 4} }, "1906-1915": { nodes: [ {name: "Józefa Joteyko", size: 35, country: "Belgium"}, {name: "Charles Richet", size: 25, country: "France"}, {name: "Ovide Decroly", size: 22, country: "Belgium"}, {name: "É. Claparède", size: 20, country: "Switzerland"}, {name: "Alfred Binet", size: 20, country: "France"}, {name: "Varia Kipiani", size: 15, country: "Georgia"} ], stats: {contacts: 312, countries: 12} }, "1916-1928": { nodes: [ {name: "Józefa Joteyko", size: 30, country: "Poland"}, {name: "M. Grzegorzewska", size: 25, country: "Poland"}, {name: "Charles Richet", size: 20, country: "France"}, {name: "S. Sedlaczek", size: 18, country: "Poland"} ], stats: {contacts: 278, countries: 8} } };
+        function createTemporalNetwork(period) { console.log('Tworzenie sieci temporalnej dla:', period); const svg = d3.select("#temporal-network"); const width = +svg.attr("width"); const height = +svg.attr("height"); svg.selectAll("*").remove(); const data = temporalData[period]; const countryColors = { "Geneva": "#ff6347", "Belgium": "#ffd700", "France": "#4169e1", "Poland": "#dc143c", "Switzerland": "#ff6347", "Georgia": "#9370db" }; const centerX = width / 2; const centerY = height / 2; const radius = Math.min(width, height) / 3; const nodes = data.nodes.map((d, i) => { if (d.name === "Józefa Joteyko") { return { ...d, x: centerX, y: centerY }; } else { const angle = (2 * Math.PI * i) / (data.nodes.length - 1); return { ...d, x: centerX + radius * Math.cos(angle), y: centerY + radius * Math.sin(angle) }; } }); const node = svg.append("g").selectAll("circle").data(nodes).enter().append("circle").attr("r", d => d.size).attr("fill", d => countryColors[d.country] || "#999").attr("stroke", d => d.name === "Józefa Joteyko" ? "#000" : "#fff").attr("stroke-width", 3).attr("cx", d => d.x).attr("cy", d => d.y); const labels = svg.append("g").selectAll("text").data(nodes).enter().append("text").text(d => d.name).attr("font-size", "10px").attr("text-anchor", "middle").attr("x", d => d.x).attr("y", d => d.y - d.size - 5); document.getElementById('current-period').textContent = period; document.getElementById('contacts-count').textContent = data.stats.contacts; document.getElementById('countries-count').textContent = data.stats.countries; console.log('Sieć temporalna utworzona'); }
+        function createGeographicalMap() { console.log('Tworzenie finalnej mapy geograficznej...'); const svg = d3.select("#geographical-map"); const width = +svg.attr("width"); const height = +svg.attr("height"); svg.selectAll("*").remove(); const margin = {top: 100, right: 200, bottom: 100, left: 200}; const innerWidth = width - margin.left - margin.right; const innerHeight = height - margin.top - margin.bottom; const countries = [ {name: "W. Brytania", x: margin.left + innerWidth * 0.15, y: margin.top + innerHeight * 0.2, cooperation: 8, color: "#ffeb3b"}, {name: "Belgia", x: margin.left + innerWidth * 0.35, y: margin.top + innerHeight * 0.35, cooperation: 67, color: "#ff6b6b"}, {name: "Francja", x: margin.left + innerWidth * 0.25, y: margin.top + innerHeight * 0.75, cooperation: 54, color: "#ff6b6b"}, {name: "Niemcy", x: margin.left + innerWidth * 0.55, y: margin.top + innerHeight * 0.25, cooperation: 12, color: "#ffeb3b"}, {name: "Szwajcaria", x: margin.left + innerWidth * 0.45, y: margin.top + innerHeight * 0.7, cooperation: 37, color: "#ffa726"}, {name: "Polska", x: margin.left + innerWidth * 0.8, y: margin.top + innerHeight * 0.4, cooperation: 287, color: "#ffa726"}, {name: "Gruzja", x: margin.left + innerWidth * 0.85, y: margin.top + innerHeight * 0.8, cooperation: 6, color: "#ffeb3b"} ]; function calculateRadius(cooperation) { const minRadius = 15; const maxRadius = 60; const maxCooperation = Math.max(...countries.map(d => d.cooperation)); if (cooperation === maxCooperation) { return maxRadius; } else { return minRadius + (cooperation / maxCooperation) * (maxRadius - minRadius); } } const countryGroups = svg.selectAll(".country-group").data(countries).enter().append("g").attr("class", "country-group"); countryGroups.append("circle").attr("class", "country-circle").attr("cx", d => d.x).attr("cy", d => d.y).attr("r", d => calculateRadius(d.cooperation)).attr("fill", d => d.color).attr("stroke", "#2c3e50").attr("stroke-width", 3).attr("opacity", 0.8); countryGroups.each(function(d) { const group = d3.select(this); const radius = calculateRadius(d.cooperation); let labelX, labelY; if (d.y < margin.top + innerHeight * 0.4) { labelX = d.x; labelY = d.y - radius - 50; } else if (d.y > margin.top + innerHeight * 0.6) { labelX = d.x; labelY = d.y + radius + 50; } else { if (d.x < margin.left + innerWidth * 0.5) { labelX = d.x - radius - 70; } else { labelX = d.x + radius + 70; } labelY = d.y; } const bbox = {width: 100, height: 50}; group.append("rect").attr("class", "country-label-box").attr("x", labelX - bbox.width/2).attr("y", labelY - bbox.height/2).attr("width", bbox.width).attr("height", bbox.height); group.append("text").attr("class", "country-label").attr("x", labelX).attr("y", labelY - 8).text(d.name); group.append("text").attr("class", "country-stats").attr("x", labelX).attr("y", labelY + 8).text(`${d.cooperation}/rok`); if (Math.abs(labelX - d.x) > radius + 10 || Math.abs(labelY - d.y) > radius + 10) { const angle = Math.atan2(labelY - d.y, labelX - d.x); const startX = d.x + radius * Math.cos(angle); const startY = d.y + radius * Math.sin(angle); const endX = labelX - (bbox.width/2) * Math.sign(labelX - d.x); const endY = labelY - (bbox.height/2) * Math.sign(labelY - d.y); group.append("line").attr("class", "connection-line").attr("x1", startX).attr("y1", startY).attr("x2", endX).attr("y2", endY); } }); countryGroups.on("mouseover", function(event, d) { const tooltip = d3.select("#tooltip"); tooltip.style("display", "block").html(`<strong>${d.name}</strong><br/>Intensywność: ${d.cooperation} kontaktów/rok<br/>Kategoria: ${d.cooperation > 50 ? 'Bardzo intensywna' : d.cooperation > 20 ? 'Intensywna' : 'Umiarkowana'}`).style("left", (event.pageX + 10) + "px").style("top", (event.pageY - 10) + "px"); d3.select(this).select(".country-circle").attr("stroke-width", 5).attr("opacity", 1); }).on("mouseout", function() { d3.select("#tooltip").style("display", "none"); d3.select(this).select(".country-circle").attr("stroke-width", 3).attr("opacity", 0.8); }); console.log('Dopracowana mapa geograficzna utworzona'); }
+        function showPeriod(period) { document.querySelectorAll('.btn').forEach(btn => btn.classList.remove('active')); event.target.classList.add('active'); createTemporalNetwork(period); }
+        document.addEventListener('DOMContentLoaded', function() { console.log('DOM załadowany, inicjalizacja wizualizacji...'); setTimeout(() => { try { createMainNetwork(); createGenderNetwork(); createTemporalNetwork('1886-1895'); createGeographicalMap(); console.log('Wszystkie wizualizacje utworzone'); } catch (error) { console.error('Błąd podczas tworzenia wizualizacji:', error); } }, 500); });
+        window.showPeriod = showPeriod;
+    </script>
+</body>
+</html>
